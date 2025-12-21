@@ -1,0 +1,17 @@
+/* 去掉所有默认边距，让页面占满屏幕 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  width: 100%;
+  height: 100%;
+  background-color: #f0f2f5; /* 和我们页面的背景色保持一致 */
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+}
