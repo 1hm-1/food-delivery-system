@@ -2,10 +2,8 @@ package com.example.food_delivery.mapper;
 
 import com.example.food_delivery.entity.Order;
 import com.example.food_delivery.entity.OrderItem;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Options;
-import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.*;
+
 import java.util.List;
 
 @Mapper
@@ -30,5 +28,26 @@ public interface OrderMapper {
             "WHERE o.user_id = #{userId} " +
             "ORDER BY o.created_at DESC")
     List<Order> findByUserId(Integer userId);
+
+    //  1. 新增：根据 ID 查单笔订单 (带餐厅信息)
+    @Select("SELECT o.*, r.name as restaurantName, r.image_url as restaurantImage " +
+            "FROM tbl_orders o " +
+            "JOIN tbl_restaurants r ON o.restaurant_id = r.id " +
+            "WHERE o.id = #{id}")
+    Order findById(Integer id);
+
+    //  2. 新增：查询某个订单里买了哪些菜
+    @Select("SELECT * FROM tbl_order_items WHERE order_id = #{orderId}")
+    List<OrderItem> findItemsByOrderId(Integer orderId);
+    //  1. 商家后台：查询所有订单（关联查询餐厅名字，按时间倒序）
+    @Select("SELECT o.*, r.name as restaurantName, r.image_url as restaurantImage " +
+            "FROM tbl_orders o " +
+            "JOIN tbl_restaurants r ON o.restaurant_id = r.id " +
+            "ORDER BY o.created_at DESC")
+    List<Order> findAllOrders();
+
+    //  2. 商家后台：修改订单状态 (例如从 PENDING 改为 DELIVERED)
+    @Update("UPDATE tbl_orders SET status = #{status} WHERE id = #{id}")
+    void updateStatus(Integer id, String status);
 }
 

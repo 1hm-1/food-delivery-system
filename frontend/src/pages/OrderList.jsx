@@ -78,6 +78,10 @@ const OrderList = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
+                  // 添加点击跳转
+                  onClick={() => navigate(`/orders/${item.id}`)}
+                  // 增加一个小手光标，提示可点击
+                  style={{ cursor: "pointer" }}
                 >
                   <div
                     style={{
