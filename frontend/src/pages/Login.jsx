@@ -8,6 +8,7 @@ import {
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import CryptoJS from "crypto-js"; // 1. 引入加密库
 
 const { Content, Footer } = Layout;
 
@@ -18,24 +19,43 @@ const Login = () => {
   const onFinish = async (values) => {
     setLoading(true);
     try {
+      // 2. 登录时也必须加密，才能和数据库里的密文匹配
+      const encryptedPassword = CryptoJS.MD5(values.password).toString();
+
       const payload = {
         phone: values.phone,
-        passwordHash: values.password,
+        password: encryptedPassword, // 注意：虽然 User.java 是 passwordHash，但 Controller 接收 map 可能用了 password 这个key，我们保持一致
       };
 
-      const response = await axios.post("/api/users/login", payload);
+      // 这里的 payload 键名取决于你的 UserController 里的 login 接收方式
+      // 如果后端是 Map<String, String> payload，且取值是用 payload.get("password")
+      // 那么这里传 password 就对了。
+      // 如果后端 login 接口用 User 实体接收，那应该传 passwordHash
+
+      // 根据之前的交流，后端 Login 接口接收的是 Map，取的是 "password" 和 "username"(或者 phone)
+      // 我们稍微调整一下 payload 以匹配通用情况：
+      const finalPayload = {
+        username: values.phone, // 有些后端实现可能用 username 接手机号
+        phone: values.phone,
+        password: encryptedPassword,
+      };
+
+      const response = await axios.post("/api/users/login", finalPayload);
 
       if (typeof response.data === "object" && response.data.userId) {
         message.success("欢迎回来！");
-        // 跳转到首页 ---
+        // 保存用户信息到本地
+        localStorage.setItem("user", JSON.stringify(response.data));
+
         setTimeout(() => {
-          navigate("/home");
+          navigate("/home"); // 假设登录后去 home
         }, 1000);
-        console.log("登录用户信息:", response.data);
       } else {
-        message.error(response.data);
+        // 如果后端返回空，说明登录失败
+        message.error("登录失败：手机号或密码错误");
       }
     } catch (error) {
+      console.error(error);
       message.error("登录服务暂时不可用");
     } finally {
       setLoading(false);
@@ -43,7 +63,6 @@ const Login = () => {
   };
 
   return (
-    // 1. 背景改为浅灰
     <Layout
       style={{
         background: "#F5F5F7",
@@ -91,7 +110,6 @@ const Login = () => {
             </div>
           </div>
 
-          {/* 2. 卡片改为磨砂白 + 阴影 */}
           <div
             style={{
               background: "rgba(255, 255, 255, 0.6)",
@@ -115,13 +133,7 @@ const Login = () => {
                 <Input
                   prefix={<MobileOutlined style={{ color: "#86868b" }} />}
                   placeholder="手机号"
-                  style={{
-                    background: "#fff",
-                    border: "1px solid #d2d2d7",
-                    color: "#1d1d1f",
-                    borderRadius: "12px",
-                    padding: "12px",
-                  }}
+                  style={{ borderRadius: "12px", padding: "12px" }}
                 />
               </Form.Item>
 
@@ -132,13 +144,7 @@ const Login = () => {
                 <Input.Password
                   prefix={<LockOutlined style={{ color: "#86868b" }} />}
                   placeholder="密码"
-                  style={{
-                    background: "#fff",
-                    border: "1px solid #d2d2d7",
-                    color: "#1d1d1f",
-                    borderRadius: "12px",
-                    padding: "12px",
-                  }}
+                  style={{ borderRadius: "12px", padding: "12px" }}
                 />
               </Form.Item>
 
@@ -156,8 +162,6 @@ const Login = () => {
                     style={{
                       height: "50px",
                       borderRadius: "25px",
-                      fontSize: "16px",
-                      fontWeight: 600,
                       background:
                         "linear-gradient(90deg, #0071e3 0%, #42a1ff 100%)",
                       border: "none",
@@ -172,7 +176,6 @@ const Login = () => {
           </div>
         </motion.div>
       </Content>
-
       <Footer
         style={{
           position: "absolute",
