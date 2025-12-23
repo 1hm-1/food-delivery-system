@@ -184,7 +184,7 @@ const Login = () => {
           color: "#86868b",
         }}
       >
-        FoodDelivery.Pro Secure Login
+        Copyright © 2025 LabWork 李昊旻
       </Footer>
     </Layout>
   );

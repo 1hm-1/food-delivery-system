@@ -27,7 +27,7 @@ public class UserController {
     // ================== 登录接口 (修复版) ==================
     @PostMapping("/login")
     // 使用 Map<String, String> 而不是 User 对象，
-    // 这样可以不管前端传的是 "password" 还是 "passwordHash"，我们都能拿到
+    // 不管前端传的是 "password" 还是 "passwordHash"都能拿到
     public Object login(@RequestBody Map<String, String> payload) {
 
         // 1. 获取手机号 (兼容 phone 和 username)

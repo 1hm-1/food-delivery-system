@@ -7,6 +7,7 @@ import RestaurantDetail from "./pages/RestaurantDetail";
 import OrderList from './pages/OrderList';
 import OrderDetail from "./pages/OrderDetail";
 import MerchantDashboard from "./pages/MerchantDashboard";
+import Cart from "./pages/Cart";
 function App() {
   return (
     <BrowserRouter>
@@ -26,8 +27,10 @@ function App() {
         <Route path="/orders" element={<OrderList />} />
         {/* 动态参数所以用id */}
         <Route path="/orders/:id" element={<OrderDetail />} />
-        
+
         <Route path="/merchant" element={<MerchantDashboard />} />
+
+        <Route path="/cart" element={<Cart />} />
       </Routes>
     </BrowserRouter>
   );

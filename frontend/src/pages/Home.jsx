@@ -90,16 +90,18 @@ const Home = () => {
           <Button
             shape="circle"
             icon={<ShoppingCartOutlined />}
+            onClick={() => navigate("/cart")} //添加跳转
             style={{
               border: "none",
               background: "transparent",
               color: "#1d1d1f",
+              cursor: "pointer", // 鼠标变手型
             }}
           />
           <Button
             shape="circle"
             icon={<UserOutlined />}
-            onClick={() => navigate("/orders")}
+            onClick={() => navigate("/orders")} // 添加跳转
             style={{
               border: "none",
               background: "transparent",
@@ -263,7 +265,7 @@ const Home = () => {
       <Footer
         style={{ textAlign: "center", background: "#F5F5F7", color: "#86868b" }}
       >
-        FoodDelivery.Pro ©2025 Created by You
+        FoodDelivery.Pro ©2025 Created by Lihaomin
       </Footer>
     </Layout>
   );

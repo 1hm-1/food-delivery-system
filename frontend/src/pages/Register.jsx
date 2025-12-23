@@ -18,7 +18,7 @@ import {
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { motion, useScroll, useTransform } from "framer-motion";
-import CryptoJS from "crypto-js"; // 1. 引入加密库
+import CryptoJS from "crypto-js"; 
 
 const { Header, Content, Footer } = Layout;
 const { Title, Text } = Typography;
@@ -47,14 +47,14 @@ const Register = () => {
   const y1 = useTransform(scrollY, [0, 500], [0, 200]);
 
   const onFinish = async (values) => {
-    // 2. 正则校验手机号 (11位，1开头)
+    // 正则校验手机号 (11位，1开头)
     const phoneRegex = /^1\d{10}$/;
     if (!phoneRegex.test(values.phone)) {
       message.error("请输入有效的11位手机号码");
       return;
     }
 
-    // 3. 校验密码长度 (不少于6位)
+    // 校验密码长度 (不少于6位)
     if (values.password.length < 6) {
       message.error("密码长度不能少于6位");
       return;
@@ -62,7 +62,7 @@ const Register = () => {
 
     setLoading(true);
     try {
-      // 4. 前端加密密码 (MD5)
+      //  前端加密密码 (MD5)
       const encryptedPassword = CryptoJS.MD5(values.password).toString();
 
       const payload = {
@@ -122,7 +122,7 @@ const Register = () => {
             letterSpacing: "-0.5px",
           }}
         >
-          FoodDelivery<span style={{ color: "#0071e3" }}>.Pro</span>
+          FoodDelivery<span style={{ color: "#0071e3" }}>.Com</span>
         </div>
         <div>
           <Button
@@ -309,7 +309,7 @@ const Register = () => {
           borderTop: "1px solid #e5e5e5",
         }}
       >
-        Copyright © 2025 FoodDelivery Inc. All rights reserved.
+        Copyright © 2025 LabWork 李昊旻
       </Footer>
     </Layout>
   );

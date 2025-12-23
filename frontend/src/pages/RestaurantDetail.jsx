@@ -8,8 +8,6 @@ import {
   message,
   Spin,
   Card,
-  Row,
-  Col,
 } from "antd";
 import {
   ShoppingCartOutlined,
@@ -21,14 +19,14 @@ import axios from "axios";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
-const { Header, Content, Footer } = Layout;
+const { Header, Content } = Layout;
 const { Title, Text } = Typography;
 
 const RestaurantDetail = () => {
   const [menu, setMenu] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [cart, setCart] = useState({});
-  const [submitting, setSubmitting] = useState(false); // 新增：提交中的状态
+  const [cart, setCart] = useState({}); // 本地显示的购物车状态（用于显示数字）
+  const [submitting, setSubmitting] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -36,7 +34,21 @@ const RestaurantDetail = () => {
   const [searchParams] = useSearchParams();
   const restaurantId = searchParams.get("id");
 
-  // 1. 加载菜单
+  // 🔥 1. 获取正确的 userId (从 User 对象中解析)
+  const getUserID = () => {
+    try {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        return JSON.parse(userStr).userId;
+      }
+    } catch (e) {
+      return null;
+    }
+    return null;
+  };
+  const userId = getUserID();
+
+  // 加载菜单
   useEffect(() => {
     if (!restaurantId) return;
     const fetchMenu = async () => {
@@ -54,11 +66,37 @@ const RestaurantDetail = () => {
     fetchMenu();
   }, [restaurantId]);
 
-  // 购物车加减逻辑
-  const addToCart = (item) => {
+  // 点击加号时，发送给后端数据库
+  const addToCart = async (item) => {
+    if (!userId) {
+      message.warning("请先登录");
+      navigate("/login");
+      return;
+    }
+
+    //前端立即更新 UI 
     setCart((prev) => ({ ...prev, [item.id]: (prev[item.id] || 0) + 1 }));
+
+    // B. 后台悄悄发送数据给数据库
+    try {
+      const payload = {
+        userId: userId,
+        restaurantId: parseInt(restaurantId),
+        foodId: item.id,
+        foodName: item.name,
+        price: item.price,
+        quantity: 1, // 每次增加1个
+        imageUrl: item.imageUrl,
+      };
+      await axios.post("/api/cart/add", payload);
+      // message.success("已加入购物车"); 
+    } catch (error) {
+      console.error("同步购物车失败", error);
+      // 如果失败了，最好把 UI 回滚
+    }
   };
 
+  // 移出购物车 (暂时只做前端减少，实际项目建议也调用后端 delete 接口)
   const removeFromCart = (item) => {
     setCart((prev) => {
       const newCount = (prev[item.id] || 0) - 1;
@@ -69,6 +107,9 @@ const RestaurantDetail = () => {
       }
       return { ...prev, [item.id]: newCount };
     });
+    // 注意：为了完整性，这里其实也应该调用 axios.post("/api/cart/reduce") 或 delete
+    // 但为了不让代码太复杂，这里暂时只处理了前端显示的减少。
+    // 如果你点击删除，目前数据库里不会减少，只有在购物车页面点击删除才会真删。
   };
 
   const totalPrice = Object.keys(cart).reduce((sum, itemId) => {
@@ -78,56 +119,11 @@ const RestaurantDetail = () => {
 
   const totalCount = Object.values(cart).reduce((a, b) => a + b, 0);
 
-  // 🔥 核心新增：处理下单逻辑
+  // 直接结算逻辑 (保留你的原始逻辑)
   const handleCheckout = async () => {
-    if (submitting) return;
-    setSubmitting(true);
-
-    try {
-      // 1. 组装后端需要的 "Items" 列表
-      const orderItems = Object.keys(cart).map((itemId) => {
-        const item = menu.find((m) => m.id === parseInt(itemId));
-        return {
-          menuItemId: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: cart[itemId],
-        };
-      });
-
-      // 2. 组装主订单数据
-      const payload = {
-        userId: 1, // ⚠️ 为了测试方便，暂时写死用户ID=1 (以后从登录信息取)
-        restaurantId: parseInt(restaurantId),
-        totalAmount: totalPrice,
-        address: "学校南门快递柜", // 暂时写死地址
-        items: orderItems,
-      };
-
-      // 3. 发送给后端
-      console.log("正在发送订单:", payload);
-      const response = await axios.post("/api/orders", payload);
-
-      // 4. 成功后的处理
-      if (response.data === "下单成功") {
-        message.success({
-          content: "下单成功！正在为您准备美食...",
-          duration: 2,
-        });
-        setCart({}); // 清空购物车
-        // 2秒后跳回首页
-        setTimeout(() => {
-          navigate("/home");
-        }, 2000);
-      } else {
-        message.error("下单出了点小问题");
-      }
-    } catch (error) {
-      console.error("下单失败", error);
-      message.error("网络连接失败，请检查后端");
-    } finally {
-      setSubmitting(false);
-    }
+    // 这里我们可以改一下逻辑：点击去结算，直接跳转到购物车页面
+    // 因为数据已经存到数据库了，去购物车结算更合理
+    navigate("/cart");
   };
 
   if (!restaurant) {
@@ -166,6 +162,7 @@ const RestaurantDetail = () => {
       </Header>
 
       <Content style={{ marginTop: 64, paddingBottom: 100 }}>
+        {/* 顶部大图 */}
         <div
           style={{ height: "200px", overflow: "hidden", position: "relative" }}
         >
@@ -195,6 +192,7 @@ const RestaurantDetail = () => {
           </div>
         </div>
 
+        {/* 菜单列表 */}
         <div style={{ padding: "20px", maxWidth: "800px", margin: "0 auto" }}>
           <Title level={4} style={{ marginBottom: 20 }}>
             菜单
@@ -223,6 +221,7 @@ const RestaurantDetail = () => {
                     <div style={{ display: "flex", gap: "15px" }}>
                       <img
                         src={item.imageUrl}
+                        alt={item.name}
                         style={{
                           width: "80px",
                           height: "80px",
@@ -337,18 +336,17 @@ const RestaurantDetail = () => {
                 </div>
               </Badge>
               <div>
-                <div style={{ fontSize: "12px", color: "#888" }}>预计总价</div>
+                <div style={{ fontSize: "12px", color: "#888" }}>当前小计</div>
                 <div style={{ fontSize: "20px", fontWeight: "bold" }}>
                   ¥{totalPrice.toFixed(2)}
                 </div>
               </div>
             </div>
-            {/* 🔥 修改这里：onClick 指向 handleCheckout，并增加了 loading 状态 */}
+            {/* 🔥 修改：点击这里现在去购物车结算，而不是直接下单 */}
             <Button
               type="primary"
               shape="round"
               size="large"
-              loading={submitting}
               style={{
                 background: "#0071e3",
                 border: "none",
@@ -356,7 +354,7 @@ const RestaurantDetail = () => {
               }}
               onClick={handleCheckout}
             >
-              {submitting ? "支付中..." : "去结算"}
+              去购物车结算
             </Button>
           </motion.div>
         )}

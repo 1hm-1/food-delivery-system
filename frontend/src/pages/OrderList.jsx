@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { Layout, List, Typography, Tag, Button, Spin, Empty } from "antd";
+import {
+  Layout,
+  List,
+  Typography,
+  Tag,
+  Button,
+  Spin,
+  Empty,
+  message,
+} from "antd";
 import { ArrowLeftOutlined, ClockCircleOutlined } from "@ant-design/icons";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -13,22 +22,43 @@ const OrderList = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // 这里的 userId 暂时写死为 1
-  const userId = 1;
+  // 🔥 修正点：不再写死 userId = 1，而是从 localStorage 获取
+  const getUserID = () => {
+    try {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        return JSON.parse(userStr).userId;
+      }
+    } catch (e) {
+      return null;
+    }
+    return null;
+  };
+
+  const userId = getUserID();
 
   useEffect(() => {
+    // 如果没登录，踢回登录页
+    if (!userId) {
+      message.warning("请先登录查看订单");
+      navigate("/login");
+      return;
+    }
+
     const fetchOrders = async () => {
       try {
+        // 使用动态的 userId 查询
         const response = await axios.get(`/api/orders?userId=${userId}`);
         setOrders(response.data);
       } catch (error) {
         console.error("获取订单失败", error);
+        message.error("获取订单列表失败");
       } finally {
         setLoading(false);
       }
     };
     fetchOrders();
-  }, []);
+  }, [userId, navigate]); // 依赖项加上 userId
 
   return (
     <Layout style={{ background: "#F5F5F7", minHeight: "100vh" }}>
@@ -78,9 +108,7 @@ const OrderList = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  // 添加点击跳转
                   onClick={() => navigate(`/orders/${item.id}`)}
-                  // 增加一个小手光标，提示可点击
                   style={{ cursor: "pointer" }}
                 >
                   <div
@@ -97,7 +125,9 @@ const OrderList = () => {
                   >
                     {/* 餐厅图片 */}
                     <img
-                      src={item.restaurantImage}
+                      src={
+                        item.restaurantImage || "https://via.placeholder.com/60"
+                      }
                       style={{
                         width: "60px",
                         height: "60px",
@@ -122,7 +152,7 @@ const OrderList = () => {
                             color: "#1d1d1f",
                           }}
                         >
-                          {item.restaurantName}
+                          {item.restaurantName || "未知餐厅"}
                         </div>
                         <div style={{ fontWeight: "bold", color: "#1d1d1f" }}>
                           ¥{item.totalAmount}
@@ -139,7 +169,9 @@ const OrderList = () => {
                         }}
                       >
                         <ClockCircleOutlined />{" "}
-                        {new Date(item.createdAt).toLocaleString()}
+                        {item.createdAt
+                          ? new Date(item.createdAt).toLocaleString()
+                          : "刚刚"}
                       </div>
 
                       <div style={{ marginTop: "10px" }}>

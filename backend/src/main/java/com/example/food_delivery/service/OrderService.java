@@ -13,7 +13,7 @@ public class OrderService {
     @Autowired
     private OrderMapper orderMapper;
 
-    // @Transactional 是核心：它保证了“保存订单主表”和“保存订单详情”这两步
+    // @Transactional 是核心：保证了“保存订单主表”和“保存订单详情”这两步
     // 要么同时成功，要么同时失败（回滚），防止数据不一致。
     @Transactional
     public void createOrder(Order order) {
